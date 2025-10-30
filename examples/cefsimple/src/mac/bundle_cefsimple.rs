@@ -165,10 +165,17 @@ mod mac {
     }
 
     pub fn main() -> Result<(), Box<dyn std::error::Error>> {
-        let app_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug");
-        run_command(&["build", "--bin", "cefsimple"])?;
-        run_command(&["build", "--bin", "cefsimple_helper"])?;
-        bundle(&app_path);
+        if cfg!(debug_assertions) {
+            let app_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/debug");
+            run_command(&["build", "--bin", "cefsimple"])?;
+            run_command(&["build", "--bin", "cefsimple_helper"])?;
+            bundle(&app_path);
+        } else {
+            let app_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/release");
+            run_command(&["build", "--bin", "cefsimple", "--release"])?;
+            run_command(&["build", "--bin", "cefsimple_helper", "--release"])?;
+            bundle(&app_path);
+        }
         Ok(())
     }
 }
