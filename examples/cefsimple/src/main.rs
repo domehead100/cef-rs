@@ -12,6 +12,15 @@ wrap_app! {
                 self.window.clone(),
             ))
         }
+
+        #[cfg(target_os = "macos")]
+        // on macos, avoid popup asking to enter password to use the chrome keychain
+        fn on_before_command_line_processing(&self, _process_type: Option<&CefString>, command_line: Option<&mut CommandLine>) {
+            if let Some(cmd_line) = command_line {
+                let switch = CefString::from("use-mock-keychain");
+                cmd_line.append_switch(Some(&switch));
+            }
+        }
     }
 }
 
