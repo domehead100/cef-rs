@@ -12,7 +12,7 @@ members = [
 ]
 
 [workspace.package]
-version = "141.6.0+141.0.11"
+version = "141.6.1+141.0.11"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
 authors = [
@@ -24,7 +24,7 @@ repository = "https://github.com/tauri-apps/cef-rs"
 
 [workspace.dependencies]
 cef = { path = "cef" }
-cef-dll-sys = { version = "141.6.0", path = "sys" }
+cef-dll-sys = { version = "141.6.1", path = "sys" }
 download-cef = { version = "2.2", path = "download-cef" }
 
 anyhow = "1"
@@ -32,12 +32,12 @@ ash = "0.38"
 bindgen = "0.72"
 clap = { version = "4", features = ["derive"] }
 cmake = "0.1.52"
-convert_case = "0.8"
+convert_case = "0.9"
 git-cliff = "2"
 git-cliff-core = "2"
 io-surface = "0.16"
 libc = "0.2"
-libloading = "0.8"
+libloading = "0.9"
 metal = "0.32"
 objc = "0.2"
 objc2 = "0.6.3"
