@@ -58,7 +58,11 @@ wrap_browser_process_handler! {
 
 wrap_client! {
     struct DemoClient;
-    impl Client {}
+    impl Client {
+        fn context_menu_handler(&self) -> Option<ContextMenuHandler> {
+            Some(DemoContextMenuHandler::new())
+        }
+    }
 }
 
 wrap_window_delegate! {
@@ -110,6 +114,52 @@ wrap_window_delegate! {
 
         fn can_close(&self, _window: Option<&mut Window>) -> ::std::os::raw::c_int {
             1
+        }
+    }
+}
+
+wrap_context_menu_handler! {
+    struct DemoContextMenuHandler;
+
+    impl ContextMenuHandler {
+        // by clearing the passed-in model param, we disable showing any context menu, because we've emptied out
+        // any default context menu items
+        fn on_before_context_menu(
+            &self,
+             _browser: Option<&mut Browser>,
+            _frame: Option<&mut Frame>,
+            _params: Option<&mut ContextMenuParams>,
+            model: Option<&mut MenuModel>,
+        ) {
+            if let Some(model) = model {
+                model.clear();
+            }
+        }
+
+        // this prevents context menu commands from running in case somehowa context menu is shown.
+        // returning 1 tells CEF that the command was handled, whereas returning 0 would invoke a
+        // default handler if one exists (I think)
+        fn on_context_menu_command(
+            &self,
+            _browser: Option<&mut Browser>,
+            _frame: Option<&mut Frame>,
+            _params: Option<&mut ContextMenuParams>,
+            _command_id: ::std::os::raw::c_int,
+            _event_flags: EventFlags,
+        ) -> i32 {
+            return 1;
+        }
+
+        // on macos, this prevents OS default context menu from showing when right-clicking on a link,
+        // preventing things such as various default services like speech, text editing, passing to other apps, etc.
+        fn run_context_menu(&self,
+            _browser: Option<&mut Browser>,
+            _frame: Option<&mut Frame>,
+            _params: Option<&mut ContextMenuParams>,
+            _model: Option<&mut MenuModel>,
+            _callback: Option<&mut RunContextMenuCallback>,) -> i32 {
+                return 1;
+
         }
     }
 }
