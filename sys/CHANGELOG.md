@@ -7,10 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [142.4.1+142.0.15](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v142.4.0+142.0.15...cef-dll-sys-v142.4.1+142.0.15) - 2025-11-22
+
+### Fixed
+
+- use build-time OUT_DIR variable in get_cef_dir
+
+## [142.4.0+142.0.15](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v142.3.1+142.0.14...cef-dll-sys-v142.4.0+142.0.15) - 2025-11-21
+
+### Other
+
+- *(release)* update CEF version to 142.0.15
+
+## [142.3.1+142.0.14](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v142.3.0+142.0.14...cef-dll-sys-v142.3.1+142.0.14) - 2025-11-20
+
+### Other
+
+- release v142.3.1+142.0.14
+
+## [142.3.0+142.0.14](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v142.2.1+142.0.10...cef-dll-sys-v142.3.0+142.0.14) - 2025-11-20
+
+### Other
+
+- update bindings
+- *(release)* update CEF version to 142.0.14
+
+## [142.2.1+142.0.10](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v142.2.0+142.0.10...cef-dll-sys-v142.2.1+142.0.10) - 2025-11-16
+
+### Other
+
+- release v142.2.1+142.0.10
+- update bindings
+
+## [142.2.0+142.0.10](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v142.1.0+142.0.8...cef-dll-sys-v142.2.0+142.0.10) - 2025-11-13
+
+### Other
+
+- update bindings
+- *(release)* update CEF version to 142.0.10
+
+## [142.1.0+142.0.8](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v142.0.0+142.0.8...cef-dll-sys-v142.1.0+142.0.8) - 2025-11-12
+
+### Other
+
+- release v142.1.0+142.0.8
+
+## [142.0.0+142.0.8](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v141.6.1+141.0.11...cef-dll-sys-v142.0.0+142.0.8) - 2025-11-11
+
+### Other
+
+- update bindings
+- *(release)* update CEF version to 142.0.8
+
+## [141.6.1+141.0.11](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v141.6.0+141.0.11...cef-dll-sys-v141.6.1+141.0.11) - 2025-11-09
+
+### Other
+
+- release v141.6.1+141.0.11
+- *(deps)* update rust crate convert_case to 0.9
+- *(deps)* update rust crate libloading to 0.9
+
 ## [141.6.0+141.0.11](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v141.5.0+141.0.10...cef-dll-sys-v141.6.0+141.0.11) - 2025-10-26
 
 ### Other
 
+- update bindings
 - *(release)* update CEF version to 141.0.11
 
 ## [141.5.0+141.0.10](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v141.4.1+141.0.9...cef-dll-sys-v141.5.0+141.0.10) - 2025-10-24

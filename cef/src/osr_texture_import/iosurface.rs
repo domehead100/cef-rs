@@ -4,6 +4,7 @@
 
 use super::common::texture;
 use super::{TextureImportError, TextureImportResult, TextureImporter};
+use crate::osr_texture_import::common::format;
 use crate::{sys::cef_color_type_t, AcceleratedPaintInfo};
 use objc2_io_surface::IOSurfaceRef;
 use wgpu::TextureDescriptor;
@@ -71,11 +72,6 @@ impl TextureImporter for IOSurfaceImporter {
 impl IOSurfaceImporter {
     fn get_texture_desc(&self) -> TextureDescriptor<'_> {
         use wgpu::{Extent3d, TextureDimension, TextureUsages};
-        let format = match self.format {
-            cef_color_type_t::CEF_COLOR_TYPE_BGRA_8888 => wgpu::TextureFormat::Bgra8Unorm,
-            cef_color_type_t::CEF_COLOR_TYPE_RGBA_8888 => wgpu::TextureFormat::Rgba8Unorm,
-            _ => panic!("Unsupported color type"),
-        };
 
         TextureDescriptor {
             label: Some("Cef Texture"),
@@ -87,7 +83,7 @@ impl IOSurfaceImporter {
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D2,
-            format,
+            format: format::cef_to_wgpu(self.format).expect("Unsupported CEF color format"),
             usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_SRC,
             view_formats: &[],
         }
