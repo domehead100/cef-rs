@@ -21,6 +21,8 @@ sandbox = ["cef/sandbox"]
 [dependencies]
 cef.workspace = true
 cef-dll-sys.workspace = true
+tracing.workspace = true
+tracing-subscriber = "0.3.20"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 plist.workspace = true

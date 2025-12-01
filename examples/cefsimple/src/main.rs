@@ -1,39 +1,90 @@
+use crate::sys::cef_log_items_t;
 use cef::{args::Args, rc::*, *};
 use std::sync::{Arc, Mutex};
 
+use tracing::{error, info};
+
 wrap_app! {
-    struct DemoApp {
+    struct MyApp {
         window: Arc<Mutex<Option<Window>>>,
     }
 
     impl App {
         fn browser_process_handler(&self) -> Option<BrowserProcessHandler> {
-            Some(DemoBrowserProcessHandler::new(
+            Some(MyBrowserProcessHandler::new(
                 self.window.clone(),
             ))
         }
 
-        #[cfg(target_os = "macos")]
+        // this is the place to control command-line parameters always, such as removing any that should not be allowed or
+        // adding ones that should be passed.  TODO: need to check if the final params get shown in the process command line,
+        // which is something that we'd like to avoid for security reasons
         fn on_before_command_line_processing(&self, _process_type: Option<&CefString>, command_line: Option<&mut CommandLine>) {
             if let Some(cmd_line) = command_line {
-                // on macos, avoid popup asking for keychain access on app launch
-                let switch = CefString::from("use-mock-keychain");
-                cmd_line.append_switch(Some(&switch));
+                // macos only at this point
+                #[cfg(target_os = "macos")]
+                cmd_line.append_switch(Some(&"use-mock-keychain".into()));   // avoid popup asking for keychain access on app launch
+
+                // all platforms
+                cmd_line.append_switch(Some(&"disable-component-update".into())); // attempt to not use google services, doesn't really seem to work
             }
+        }
+
+        // will be called to register any custom schemes; use the passed-in _registrar to add one or more custom schemes
+        fn on_register_custom_schemes(&self, _registrar: Option<&mut SchemeRegistrar>) {
+            info!("App::on_register_custom_schemes called");
         }
     }
 }
 
 wrap_browser_process_handler! {
-    struct DemoBrowserProcessHandler {
+    struct MyBrowserProcessHandler {
         window: Arc<Mutex<Option<Window>>>,
     }
 
     impl BrowserProcessHandler {
+    //    fn on_register_custom_preferences(
+    //         &self,
+    //         _type_: PreferencesType,
+    //         registrar: Option<&mut PreferenceRegistrar>,
+    //     ) {
+    //         info!("MyBrowserProcessHandler::on_register_custom_preferences");
+    //         let mut off = value_create();
+    //         if let Some(ref mut value) = off {
+    //                 value.set_bool(0);
+    //                 if let Some(registrar) = registrar {
+    //                     let rv = registrar.add_preference(Some(&CefString::from("autofill.profile_enabled")), Some(value));
+    //                     info!("    registrar.add_preference(autofill.profile_enabled) returned {}", rv);
+    //                 }
+    //         }
+    //     }
+
         // The real lifespan of cef starts from `on_context_initialized`, so all the cef objects should be manipulated after that.
         fn on_context_initialized(&self) {
-            println!("cef context intiialized");
-            let mut client = DemoClient::new();
+            info!("BrowserProcessHandler::on_context_intiialized");
+
+            let pref_mgr = preference_manager_get_global();
+            if let Some(ref mgr) = pref_mgr {
+                let mut off = value_create();
+                if let Some(ref mut value) = off {
+                    value.set_bool(0);
+
+                    let all = mgr.all_preferences(0).unwrap();
+                    let mut list = CefStringList::new();
+                    all.keys(Some(&mut list));
+                    for x in list {
+                        info!("{}", x);
+                    }
+
+                    let mut err = CefString::from("");
+                    let result = mgr.set_preference(Some(&CefString::from("autofill.enabled")), Some(value), Some(&mut err));
+                    if !err.to_string().is_empty() { error!("    {err}"); }
+                    info!("    trying to set preference autofill.enabled returned {}", result);
+                }
+            }
+
+
+            let mut client = MyClient::new();
             let url = CefString::from("https://www.google.com");
 
             let browser_view = browser_view_create(
@@ -46,27 +97,40 @@ wrap_browser_process_handler! {
             )
             .expect("Failed to create browser view");
 
-            let mut delegate = DemoWindowDelegate::new(browser_view);
+            let mut delegate = MyWindowDelegate::new(browser_view);
             if let Ok(mut window) = self.window.lock() {
                 *window = Some(
                     window_create_top_level(Some(&mut delegate)).expect("Failed to create window"),
                 );
             }
         }
+
+        fn on_before_child_process_launch(&self, command_line: Option<&mut CommandLine>) {
+            info!("MyBrowserProcessHandler::on_before_child_process_launch");
+
+            if let Some(cmd_line) = command_line {
+                // macos only at this point
+                #[cfg(target_os = "macos")]
+                cmd_line.append_switch(Some(&"use-mock-keychain".into()));   // avoid popup asking for keychain access on app launch
+
+                // all platforms
+                cmd_line.append_switch(Some(&"disable-component-update".into())); // attempt to not use google services, doesn't really seem to work
+            }
+        }
     }
 }
 
 wrap_client! {
-    struct DemoClient;
+    struct MyClient;
     impl Client {
         fn context_menu_handler(&self) -> Option<ContextMenuHandler> {
-            Some(DemoContextMenuHandler::new())
+            Some(MyContextMenuHandler::new())
         }
     }
 }
 
 wrap_window_delegate! {
-    struct DemoWindowDelegate {
+    struct MyWindowDelegate {
         browser_view: BrowserView,
     }
 
@@ -119,7 +183,7 @@ wrap_window_delegate! {
 }
 
 wrap_context_menu_handler! {
-    struct DemoContextMenuHandler;
+    struct MyContextMenuHandler;
 
     impl ContextMenuHandler {
         // by clearing the passed-in model param, we disable showing any context menu, because we've emptied out
@@ -131,12 +195,19 @@ wrap_context_menu_handler! {
             _params: Option<&mut ContextMenuParams>,
             model: Option<&mut MenuModel>,
         ) {
+
+             info!("MyContextMenuHandler::on_before_context_menu");
+
             if let Some(model) = model {
+                info!("   passed-in model has {} items", model.count());
+
                 model.clear();
+                info!("   after clearing the model, model has {} items", model.count());
+
             }
         }
 
-        // this prevents context menu commands from running in case somehowa context menu is shown.
+        // this prevents context menu commands from running in case somehow a context menu is shown.
         // returning 1 tells CEF that the command was handled, whereas returning 0 would invoke a
         // default handler if one exists (I think)
         fn on_context_menu_command(
@@ -147,6 +218,7 @@ wrap_context_menu_handler! {
             _command_id: ::std::os::raw::c_int,
             _event_flags: EventFlags,
         ) -> i32 {
+            info!("MyContextMenuHandler::on_context_menu_command");
             return 1;
         }
 
@@ -156,16 +228,33 @@ wrap_context_menu_handler! {
             _browser: Option<&mut Browser>,
             _frame: Option<&mut Frame>,
             _params: Option<&mut ContextMenuParams>,
-            _model: Option<&mut MenuModel>,
+            model: Option<&mut MenuModel>,
             _callback: Option<&mut RunContextMenuCallback>,) -> i32 {
+                info!("MyContextMenuHandler::run_context_menu");
+                if let Some(model) = model {
+                    model.clear();
+                }
                 return 1;
 
+        }
+
+         fn on_quick_menu_command(
+            &self,
+            _browser: Option<&mut Browser>,
+            _frame: Option<&mut Frame>,
+            _command_id: ::std::os::raw::c_int,
+            _event_flags: EventFlags,
+        ) -> ::std::os::raw::c_int {
+            info!("MyContextMenu::on_quick_menu_command");
+            Default::default()
         }
     }
 }
 
-// FIXME: Rewrite this demo based on cef/tests/cefsimple
+// FIXME: Rewrite this example based on cef/tests/cefsimple
 fn main() {
+    let _stdout_subscriber = tracing_subscriber::fmt::init();
+
     #[cfg(target_os = "macos")]
     let _loader = {
         let loader = library_loader::LibraryLoader::new(&std::env::current_exe().unwrap(), false);
@@ -207,7 +296,7 @@ fn main() {
     let is_browser_process = cmd.has_switch(Some(&switch)) != 1;
 
     let window = Arc::new(Mutex::new(None));
-    let mut app = DemoApp::new(window.clone());
+    let mut app = MyApp::new(window.clone());
 
     let ret = execute_process(
         Some(args.as_main_args()),
@@ -216,17 +305,24 @@ fn main() {
     );
 
     if is_browser_process {
-        println!("launch browser process");
+        info!("launching browser process");
         assert!(ret == -1, "cannot execute browser process");
     } else {
         let process_type = CefString::from(&cmd.switch_value(Some(&switch)));
-        println!("launch process {process_type}");
+        info!("launch {process_type} process");
         assert!(ret >= 0, "cannot execute non-browser process");
         // non-browser process does not initialize cef
         return;
     }
+
+    // TODO: need to set root_cache_path and cache_path to an application-specific name so as not to conflict with
+    // other generic CEF instances. See:
+    // root_cache_path:  https://cef-builds.spotifycdn.com/docs/122.1/structcef__settings__t.html#a2e2be03f34ddd93de90e1cf196757a19
+    // cache_path:  https://cef-builds.spotifycdn.com/docs/122.1/structcef__settings__t.html#ad1644a7eb23cad969181db010f007710
+    // OnAlreadyRunningAppRelaunche:  https://cef-builds.spotifycdn.com/docs/122.1/classCefBrowserProcessHandler.html#a052a91639483467c0b546d57a05c2f06
     let settings = Settings {
         no_sandbox: !cfg!(feature = "sandbox") as _,
+        log_items: cef_log_items_t::LOG_ITEMS_NONE.into(), // don't log pid, tid, ticks in cef log messages
         ..Default::default()
     };
     assert_eq!(
